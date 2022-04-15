@@ -119,5 +119,72 @@ namespace ExcelAddIn1.Utils
             }
 
         }
+
+        public void loadDataToMemByRegex(Excel.Application app)
+        {
+            try
+            {
+                var filePath = openDlg.FileName;
+                using (Stream str = openDlg.OpenFile())
+                {
+                    TextReader tr = new StreamReader(str);
+                    string text;
+                    int lineNum = 1;                    
+                    //string groupData = "";
+                    string titleName = "";
+                    string wholeString = "";
+                    Dictionary<string, string> _dicEle = new Dictionary<string, string>();
+
+                    wholeString = tr.ReadToEnd();
+
+                    string patternSkill = @"Add\(\s*\[\[(\S+)\]\],(\s*--.*)*\r?\n\s*\{\r?\n(\s*((?!\s*\}).*\r?\n)*)\s*\}\s*\);\r?\n";
+                    //스킬 단위로 분리
+                    Regex r = new Regex(patternSkill, RegexOptions.IgnoreCase);
+                    Match mSkill = r.Match(wholeString);
+                    int matchCount = 0;
+                    while(mSkill.Success)
+                    {
+                        //for (int n = 0; n < mSkill.Groups.Count; n++)
+                        {
+                            Group gD = mSkill.Groups[0];
+                            Debug.WriteLine("Match Count = " + (++matchCount));
+                            Debug.WriteLine(gD);
+                            CaptureCollection cc = gD.Captures;
+                            for (int j = 0; j < cc.Count; j++)
+                            {
+                                Capture cData = cc[j];
+                                string groupData = cData.ToString();
+                                string patternName = @"\[\[([^\]]+)\]";
+                                Match mName = Regex.Match(groupData, patternName);
+                                if (mName.Success)
+                                {
+                                    titleName = mName.Value.Replace("[", "").Replace("]", "");
+                                }
+                                string patternKeyValue = @"(\S+)\s*=\s*(.*),(\s*--.*)*\r?\n";
+                                Regex element = new Regex(patternKeyValue, RegexOptions.IgnoreCase);
+                                Match eleM = element.Match(groupData);                                
+                                int eleCount = 0;
+                                while(eleM.Success)
+                                {
+                                    Group eD = eleM.Groups[0];
+                                    Debug.WriteLine("Ele Match Count = " + (++eleCount));
+                                    Debug.WriteLine(eD);
+                                    eleM = eleM.NextMatch();
+                                }
+                                //Debug.WriteLine(Regex.Replace(groupData, patternKeyValue, m => string.Format("{0}{1}", m.Value, m.Value)));
+                            }
+                        }
+                        mSkill = mSkill.NextMatch();
+                        app.StatusBar = string.Format("loading {0}", matchCount);
+                    }                    
+                }
+            }
+            catch (SecurityException ex)
+            {
+                MessageBox.Show($"Security error.\n\nError message: {ex.Message}\n\n" +
+                $"Details:\n\n{ex.StackTrace}");
+            }
+
+        }
     }
 }
