@@ -46,7 +46,8 @@ namespace ExcelAddIn1
 #if _FILELOAD //그대로 읽기
                 fileLoader.loadLua(app);
 #else
-                fileLoader.loadDataToMemByRegex(app);
+                fileLoader.loadDataToExcelByRegex(app);
+                //fileLoader.loadDataToMemByRegex(app);
 #endif
                 // This code is used to call Close() method Thread safe otherwise you get Cross-thread operation not valid Exception
                 ThreadSafeHelper.InvokeControlMethodThreadSafe(loader, () =>
